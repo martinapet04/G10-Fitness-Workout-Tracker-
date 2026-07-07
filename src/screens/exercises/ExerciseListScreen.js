@@ -1,0 +1,157 @@
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useData } from '../../context/DataContext';
+import SearchBar from '../../components/SearchBar';
+import FilterBar from '../../components/FilterBar';
+import Card from '../../components/Card';
+import EmptyState from '../../components/EmptyState';
+import { Colors, Spacing, FontSizes, BorderRadius } from '../../constants/theme';
+import { MUSCLE_GROUPS, getDifficultyColor, getDifficultyLabel } from '../../constants/data';
+
+export default function ExerciseListScreen({ navigation }) {
+  const { state } = useData();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedMuscle, setSelectedMuscle] = useState('Tutti');
+
+  const muscleFilters = [
+    { label: 'Tutti', value: 'Tutti' },
+    ...MUSCLE_GROUPS.map(m => ({ label: m, value: m }))
+  ];
+
+  const filteredExercises = useMemo(() => {
+    return state.exercises.filter(ex => {
+      const matchesSearch = ex.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesMuscle = selectedMuscle === 'Tutti' || ex.primaryMuscle === selectedMuscle || (ex.secondaryMuscles && ex.secondaryMuscles.includes(selectedMuscle));
+      return matchesSearch && matchesMuscle;
+    }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [state.exercises, searchQuery, selectedMuscle]);
+
+  const renderItem = ({ item }) => (
+    <Card 
+      style={styles.card} 
+      onPress={() => navigation.navigate('ExerciseDetail', { id: item.id })}
+    >
+      <View style={styles.cardHeader}>
+        <Text style={styles.exerciseName}>{item.name}</Text>
+        <View style={[styles.badge, { backgroundColor: getDifficultyColor(item.difficulty) + '30' }]}>
+          <Text style={[styles.badgeText, { color: getDifficultyColor(item.difficulty) }]}>
+            {getDifficultyLabel(item.difficulty)}
+          </Text>
+        </View>
+      </View>
+      <Text style={styles.muscleText}>
+        <MaterialCommunityIcons name="arm-flex" size={14} color={Colors.textSecondary} /> {item.primaryMuscle}
+      </Text>
+      <Text style={styles.equipmentText}>
+        <MaterialCommunityIcons name="weight" size={14} color={Colors.textSecondary} /> {item.equipment}
+      </Text>
+    </Card>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={['right', 'left']}>
+      <View style={styles.header}>
+        <SearchBar 
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Cerca esercizio..."
+        />
+        <FilterBar 
+          filters={muscleFilters}
+          activeFilter={selectedMuscle}
+          onSelectFilter={setSelectedMuscle}
+        />
+      </View>
+
+      <FlatList
+        data={filteredExercises}
+        keyExtractor={item => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.listContent}
+        ListEmptyComponent={
+          <EmptyState 
+            icon="dumbbell" 
+            title="Nessun esercizio" 
+            message="Non abbiamo trovato esercizi che corrispondono alla tua ricerca."
+          />
+        }
+      />
+
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => navigation.navigate('ExerciseForm')}
+      >
+        <MaterialCommunityIcons name="plus" size={30} color={Colors.text} />
+      </TouchableOpacity>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  header: {
+    padding: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
+  },
+  listContent: {
+    padding: Spacing.md,
+    paddingBottom: 100,
+  },
+  card: {
+    marginBottom: Spacing.md,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.sm,
+  },
+  exerciseName: {
+    fontSize: FontSizes.lg,
+    fontWeight: 'bold',
+    color: Colors.text,
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  badge: {
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 2,
+    borderRadius: BorderRadius.sm,
+  },
+  badgeText: {
+    fontSize: FontSizes.xs,
+    fontWeight: 'bold',
+  },
+  muscleText: {
+    color: Colors.textSecondary,
+    fontSize: FontSizes.sm,
+    marginBottom: 4,
+  },
+  equipmentText: {
+    color: Colors.textSecondary,
+    fontSize: FontSizes.sm,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+});
