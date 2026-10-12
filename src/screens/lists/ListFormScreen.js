@@ -27,7 +27,7 @@ export default function ListFormScreen({ route, navigation }) {
 
   return (
     <ScrollView style={common.screen} contentContainerStyle={common.scroll} keyboardShouldPersistTaps="handled">
-      <Field label="Nome lista *" value={name} onChangeText={(t) => { setName(t); setError(''); }} placeholder='es. Da leggere quest\'estate' error={error} />
+      <Field label="Nome lista *" value={name} onChangeText={(t) => { setName(t); setError(''); }} placeholder="es. Da leggere quest'estate" error={error} />
       <Field label="Descrizione" value={description} onChangeText={setDescription} multiline placeholder="A cosa serve questa lista..." />
       <Field label="Note" value={notes} onChangeText={setNotes} multiline placeholder="Appunti personali..." />
       <ChipSelect label="Stato" options={LIST_STATUSES.map((s) => ({ value: s.value, label: s.label }))} value={status} onChange={setStatus} />
